@@ -1,0 +1,15 @@
+{
+  "taxonomy": {
+    "authentication": "Authentication & Security",
+    "features": "Product Features",
+    "integrations": "Integrations",
+    "data-reporting": "Data & Reporting",
+    "infrastructure": "Infrastructure",
+    "development-standards": "Development Standards"
+  },
+  "modules": {
+  },
+  "docs_root": ".",
+  "cross_service_dir": "cross-service",
+  "cycle_sleep_seconds": 10
+}
