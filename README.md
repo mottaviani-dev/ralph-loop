@@ -28,10 +28,12 @@ ralph-loop/
   config/
     modules.json       # Service paths, integration map, settings
     subagents.json     # Specialist agent definitions per service
+    tasks.json         # Empty task template (copied to _state/ on setup)
     style-guide.md     # Documentation tone, structure, length rules
   prompts/
     discovery.md       # Main discovery cycle prompt
     maintenance.md     # Journal rotation + doc audit prompt
+    work.md            # Unified work prompt (plan/research/implement/fix)
   docs/
     ralph-loop.md      # The continuous iteration paradigm
     discovery-process.md  # Explore > Document > Validate > Refine
@@ -100,7 +102,65 @@ ralph-loop/run.sh --status
 | `USE_AGENTS` | `true` | Enable specialist subagent delegation |
 | `DISCOVERY_ONLY` | `false` | Skip maintenance cycles |
 
-## How the Loop Works
+## Work Mode (Implementation)
+
+Work mode lets the agent self-direct actual code implementation. Instead of documenting existing code, the agent reads project requirements, creates tasks, and implements them cycle by cycle.
+
+### How It Works
+
+Each cycle, the agent reads state files and decides ONE action:
+
+1. **PLAN** — Read requirements docs, create tasks with acceptance criteria and dependencies
+2. **RESEARCH** — Explore code to understand patterns before implementing
+3. **IMPLEMENT** — Pick the highest-priority unblocked task and write code
+4. **FIX** — Retry a failed implementation using a different approach
+
+Tasks are **not pre-populated** — the agent auto-creates them from project requirements (AGENT.md, CLAUDE.md, etc.) during plan cycles.
+
+### Running Work Mode
+
+```bash
+# Single work cycle (plan, research, implement, or fix)
+ralph-loop/run.sh --work
+
+# Continuous work until all tasks complete or are blocked
+ralph-loop/run.sh --work-loop
+
+# Check task progress
+ralph-loop/run.sh --work-status
+```
+
+### End-to-End Example
+
+```
+Cycle 1 (PLAN):    Agent reads AGENT.md → creates 5 tasks in tasks.json
+Cycle 2 (RESEARCH): Agent explores existing migration patterns
+Cycle 3 (IMPLEMENT): Agent writes migration + model → validation passes
+Cycle 4 (IMPLEMENT): Agent writes controller → validation fails (FK issue)
+Cycle 5 (FIX):    Agent reads challenge → fixes FK ordering → passes
+... continues until all tasks complete or are blocked/failed
+```
+
+### External Validation
+
+After each work cycle, the runner reads the current task's `validation_commands` from `tasks.json` and executes them. Results are written to `_state/last-validation-results.json` and injected into the next cycle's prompt so the agent can decide whether to fix or continue.
+
+### State Files
+
+| File | Purpose |
+|------|---------|
+| `_state/tasks.json` | Task registry with acceptance criteria, attempts, dependencies |
+| `_state/work-state.json` | Current task, cycle count, action stats |
+| `_state/work-prompt.md` | Active work prompt (copied from `prompts/work.md`) |
+| `_state/last-validation-results.json` | Ephemeral validation results from runner |
+
+### Environment Variables (Work Mode)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WORK_COMMIT_MSG_PREFIX` | `feat: work cycle` | Commit message prefix for work cycles |
+
+## How the Discovery Loop Works
 
 See `docs/ralph-loop.md` for the full paradigm. In short:
 

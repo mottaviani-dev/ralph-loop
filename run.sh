@@ -17,7 +17,12 @@ PROMPT_FILE="$STATE_DIR/prompt.md"
 MAINTENANCE_PROMPT_FILE="$STATE_DIR/maintenance-prompt.md"
 MAINTENANCE_STATE_FILE="$STATE_DIR/maintenance-state.json"
 SUBAGENTS_FILE="$STATE_DIR/subagents.json"
+WORK_PROMPT_FILE="$STATE_DIR/work-prompt.md"
+WORK_STATE_FILE="$STATE_DIR/work-state.json"
+TASKS_FILE="$STATE_DIR/tasks.json"
+LAST_VALIDATION_FILE="$STATE_DIR/last-validation-results.json"
 REFINE_PROMPT_FILE="${REFINE_PROMPT_FILE:-$DOCS_DIR/.claude/skills/refine-docs/SKILL.md}"
+WORK_COMMIT_MSG_PREFIX="${WORK_COMMIT_MSG_PREFIX:-feat: work cycle}"
 
 # Enable specialist subagents for delegation (set to false to disable)
 USE_AGENTS="${USE_AGENTS:-true}"
@@ -64,7 +69,7 @@ validate_json_files() {
     local had_errors=false
     local fix_script="$STATE_DIR/fix-json.py"
 
-    for json_file in "$FRONTIER_FILE" "$CYCLE_LOG_FILE" "$MAINTENANCE_STATE_FILE"; do
+    for json_file in "$FRONTIER_FILE" "$CYCLE_LOG_FILE" "$MAINTENANCE_STATE_FILE" "$TASKS_FILE" "$WORK_STATE_FILE"; do
         if [ ! -f "$json_file" ]; then
             continue
         fi
@@ -340,6 +345,18 @@ run_setup() {
         echo "  Created _state/fix-json.py"
     fi
 
+    # Copy work mode prompt
+    if [ -f "$SCRIPT_DIR/prompts/work.md" ]; then
+        cp "$SCRIPT_DIR/prompts/work.md" "$STATE_DIR/work-prompt.md"
+        echo "  Created _state/work-prompt.md"
+    fi
+
+    # Copy tasks template
+    if [ -f "$SCRIPT_DIR/config/tasks.json" ]; then
+        cp "$SCRIPT_DIR/config/tasks.json" "$STATE_DIR/tasks.json"
+        echo "  Created _state/tasks.json"
+    fi
+
     # Copy style guide
     if [ -f "$SCRIPT_DIR/config/style-guide.md" ]; then
         cp "$SCRIPT_DIR/config/style-guide.md" "$STATE_DIR/style-guide.md"
@@ -347,6 +364,8 @@ run_setup() {
     fi
 
     # Create empty state files
+    echo '{"current_task":null,"total_cycles":0,"last_cycle":null,"last_action":null,"action_history":[],"completed_tasks":[],"failed_tasks":[],"stats":{"plan_cycles":0,"research_cycles":0,"implement_cycles":0,"fix_cycles":0}}' > "$STATE_DIR/work-state.json"
+    echo "  Created _state/work-state.json"
     echo '{"mode":"breadth","current_focus":null,"queue":[],"discovered_concepts":[],"cross_service_patterns":[],"last_cycle":null,"total_cycles":0}' > "$STATE_DIR/frontier.json"
     echo '{"cycles":[]}' > "$STATE_DIR/cycle-log.json"
     echo '{"last_rotation_cycle":0,"audit_progress":{}}' > "$STATE_DIR/maintenance-state.json"
@@ -580,6 +599,353 @@ commit_changes() {
 }
 
 # ────────────────────────────────────────────────────────
+# WORK MODE FUNCTIONS
+# ────────────────────────────────────────────────────────
+
+# Initialize work state files if missing (fully self-contained, no --setup required)
+init_work_state() {
+    # Ensure _state/ directory exists
+    mkdir -p "$STATE_DIR"
+
+    # Work-specific state files
+    if [ ! -f "$WORK_STATE_FILE" ]; then
+        echo '{"current_task":null,"total_cycles":0,"last_cycle":null,"last_action":null,"action_history":[],"completed_tasks":[],"failed_tasks":[],"stats":{"plan_cycles":0,"research_cycles":0,"implement_cycles":0,"fix_cycles":0}}' > "$WORK_STATE_FILE"
+        log "Created work-state.json"
+    fi
+    if [ ! -f "$TASKS_FILE" ]; then
+        if [ -f "$SCRIPT_DIR/config/tasks.json" ]; then
+            cp "$SCRIPT_DIR/config/tasks.json" "$TASKS_FILE"
+        else
+            echo '{"schema_version":1,"project_context":"Search workspace for requirements files","tasks":[]}' > "$TASKS_FILE"
+        fi
+        log "Created tasks.json"
+    fi
+    # Always refresh prompt from template (picks up edits)
+    if [ -f "$SCRIPT_DIR/prompts/work.md" ]; then
+        cp "$SCRIPT_DIR/prompts/work.md" "$WORK_PROMPT_FILE"
+    else
+        log_error "Work prompt not found at $SCRIPT_DIR/prompts/work.md"
+        exit 1
+    fi
+
+    # Shared files that work mode also needs
+    if [ ! -f "$CYCLE_LOG_FILE" ]; then
+        echo '{"cycles":[]}' > "$CYCLE_LOG_FILE"
+        log "Created cycle-log.json"
+    fi
+    if [ ! -f "$JOURNAL_FILE" ]; then
+        touch "$JOURNAL_FILE"
+        log "Created journal.md"
+    fi
+    if [ ! -f "$CONFIG_FILE" ]; then
+        # Minimal config — work mode doesn't need module discovery
+        echo '{"modules":{},"docs_root":".","cycle_sleep_seconds":10}' > "$CONFIG_FILE"
+        log "Created minimal config.json"
+    fi
+
+    # Copy fix-json utility if available
+    if [ ! -f "$STATE_DIR/fix-json.py" ] && [ -f "$SCRIPT_DIR/fix-json.py" ]; then
+        cp "$SCRIPT_DIR/fix-json.py" "$STATE_DIR/fix-json.py"
+    fi
+}
+
+# Print task progress summary
+print_task_summary() {
+    if [ ! -f "$TASKS_FILE" ]; then
+        echo "  No tasks.json found"
+        return
+    fi
+
+    local total pending in_progress completed failed blocked
+    total=$(jq '.tasks | length' "$TASKS_FILE")
+    pending=$(jq '[.tasks[] | select(.status == "pending")] | length' "$TASKS_FILE")
+    in_progress=$(jq '[.tasks[] | select(.status == "in_progress")] | length' "$TASKS_FILE")
+    completed=$(jq '[.tasks[] | select(.status == "completed")] | length' "$TASKS_FILE")
+    failed=$(jq '[.tasks[] | select(.status == "failed")] | length' "$TASKS_FILE")
+    blocked=$(jq '[.tasks[] | select(.status == "blocked")] | length' "$TASKS_FILE")
+
+    echo -e "  Tasks: ${GREEN}${completed}${NC} done | ${YELLOW}${in_progress}${NC} active | ${BLUE}${pending}${NC} pending | ${RED}${failed}${NC} failed | ${MAGENTA}${blocked}${NC} blocked | ${total} total"
+
+    local current_task
+    current_task=$(jq -r '.current_task // "none"' "$WORK_STATE_FILE" 2>/dev/null)
+    if [ "$current_task" != "none" ] && [ "$current_task" != "null" ]; then
+        local task_title
+        task_title=$(jq -r --arg id "$current_task" '.tasks[] | select(.id == $id) | .title // "unknown"' "$TASKS_FILE")
+        echo -e "  Current: ${YELLOW}${current_task}${NC} — ${task_title}"
+    fi
+
+    local cycle_count
+    cycle_count=$(jq '.total_cycles' "$WORK_STATE_FILE" 2>/dev/null || echo "0")
+    echo "  Cycles: $cycle_count"
+}
+
+# Run post-cycle external validation
+run_post_work_validation() {
+    local current_task
+    current_task=$(jq -r '.current_task // empty' "$WORK_STATE_FILE" 2>/dev/null)
+
+    if [ -z "$current_task" ]; then
+        return 0
+    fi
+
+    local has_commands
+    has_commands=$(jq -r --arg id "$current_task" '.tasks[] | select(.id == $id) | .validation_commands | length' "$TASKS_FILE" 2>/dev/null)
+
+    if [ -z "$has_commands" ] || [ "$has_commands" = "0" ]; then
+        return 0
+    fi
+
+    log "Running external validation for task: $current_task"
+
+    local results="{}"
+    local commands
+    commands=$(jq -r --arg id "$current_task" '.tasks[] | select(.id == $id) | .validation_commands[]' "$TASKS_FILE")
+
+    while IFS= read -r cmd; do
+        [ -z "$cmd" ] && continue
+        log "  Validating: $cmd"
+
+        local exit_code=0
+        local cmd_output
+        cd "$DOCS_DIR"
+        cmd_output=$(timeout 120 bash -c "$cmd" 2>&1) || exit_code=$?
+
+        results=$(echo "$results" | jq \
+            --arg cmd "$cmd" \
+            --arg code "$exit_code" \
+            --arg out "$cmd_output" \
+            '. + {($cmd): {"exit_code": ($code|tonumber), "output": $out}}')
+
+        if [ "$exit_code" -eq 0 ]; then
+            log_success "  PASS: $cmd"
+        else
+            log_error "  FAIL (exit $exit_code): $cmd"
+        fi
+    done <<< "$commands"
+
+    echo "$results" | jq '.' > "$LAST_VALIDATION_FILE"
+    log "Validation results written to last-validation-results.json"
+}
+
+# Commit work changes (single commit per cycle)
+commit_work_changes() {
+    local cycle_num="$1"
+
+    if [ "$SKIP_COMMIT" = "true" ]; then
+        return
+    fi
+
+    # Find git root (may differ from DOCS_DIR)
+    local git_root
+    git_root=$(cd "$DOCS_DIR" && git rev-parse --show-toplevel 2>/dev/null) || return 0
+    cd "$git_root"
+
+    local all_changes
+    all_changes=$(git status --porcelain 2>/dev/null)
+    if [ -n "$all_changes" ]; then
+        # Get current task name for a descriptive commit message
+        local task_id
+        task_id=$(jq -r '.current_task // empty' "$WORK_STATE_FILE" 2>/dev/null)
+        local action
+        action=$(jq -r '.last_action // "work"' "$WORK_STATE_FILE" 2>/dev/null)
+
+        local commit_msg="$WORK_COMMIT_MSG_PREFIX $cycle_num"
+        if [ -n "$task_id" ]; then
+            commit_msg="$commit_msg [$action] $task_id"
+        else
+            commit_msg="$commit_msg [$action]"
+        fi
+
+        git add -A
+        git commit -m "$commit_msg"
+        log_success "Committed: $commit_msg"
+    fi
+
+    cd "$DOCS_DIR"
+}
+
+# Run one work cycle
+run_work_cycle() {
+    local cycle_num
+    cycle_num=$(jq '.total_cycles' "$WORK_STATE_FILE" 2>/dev/null || echo "0")
+    cycle_num=$((cycle_num + 1))
+
+    log "═══════════════════════════════════════════════════════"
+    log "Starting work cycle #$cycle_num"
+    log "═══════════════════════════════════════════════════════"
+    print_task_summary
+    echo ""
+
+    local start_time=$(date +%s)
+
+    # Build prompt — state paths are relative to DOCS_DIR (project root)
+    local prompt
+    prompt=$(cat "$WORK_PROMPT_FILE")
+    # Replace {{state_dir}} placeholder with _state/ (relative to project root)
+    prompt="${prompt//\{\{state_dir\}\}/_state}"
+
+    if [ -f "$LAST_VALIDATION_FILE" ]; then
+        local validation_content
+        validation_content=$(cat "$LAST_VALIDATION_FILE")
+        prompt="$prompt
+
+────────────────────────────────────────
+PREVIOUS CYCLE VALIDATION RESULTS
+────────────────────────────────────────
+The runner executed validation commands after the last cycle. Results:
+
+\`\`\`json
+$validation_content
+\`\`\`
+
+Use these results to decide your action (fix if failed, continue if passed)."
+        # Clean up after injection
+        rm -f "$LAST_VALIDATION_FILE"
+    fi
+
+    cd "$DOCS_DIR"
+
+    log "Running work agent (model: $CLAUDE_MODEL)..."
+
+    local claude_args="-p --model $CLAUDE_MODEL"
+    if [ "$SKIP_PERMISSIONS" = "true" ]; then
+        claude_args="$claude_args --dangerously-skip-permissions"
+    fi
+
+    local output
+    local status="success"
+    if [ "$USE_AGENTS" = "true" ] && [ -f "$SUBAGENTS_FILE" ]; then
+        if output=$(claude $claude_args --agents "$(cat "$SUBAGENTS_FILE")" "$prompt" 2>&1); then
+            log_success "Work cycle completed successfully"
+        else
+            log_error "Work cycle failed with error"
+            status="failed"
+        fi
+    else
+        if output=$(claude $claude_args "$prompt" 2>&1); then
+            log_success "Work cycle completed successfully"
+        else
+            log_error "Work cycle failed with error"
+            status="failed"
+        fi
+    fi
+
+    echo "$output"
+
+    local end_time=$(date +%s)
+    local duration=$((end_time - start_time))
+
+    # Append to journal
+    {
+        echo ""
+        echo "---"
+        echo ""
+        echo "## Work Cycle $cycle_num — $(date '+%Y-%m-%d %H:%M:%S')"
+        echo ""
+        echo "**Duration**: ${duration}s | **Status**: $status | **Model**: $CLAUDE_MODEL"
+        echo ""
+        echo "$output"
+    } >> "$JOURNAL_FILE"
+
+    log "Saved cycle output to journal.md"
+
+    # Log to cycle-log.json
+    local action_type
+    action_type=$(jq -r '.last_action // "unknown"' "$WORK_STATE_FILE" 2>/dev/null)
+
+    jq --arg num "$cycle_num" \
+       --arg time "$(date -Iseconds)" \
+       --arg dur "$duration" \
+       --arg status "$status" \
+       --arg type "work" \
+       --arg action "$action_type" \
+       '.cycles += [{"cycle": ($num|tonumber), "timestamp": $time, "duration_seconds": ($dur|tonumber), "status": $status, "type": $type, "action": $action}]' \
+       "$CYCLE_LOG_FILE" > "$CYCLE_LOG_FILE.tmp" && mv "$CYCLE_LOG_FILE.tmp" "$CYCLE_LOG_FILE"
+
+    log "Work cycle #$cycle_num completed in ${duration}s"
+
+    cd "$DOCS_DIR"
+
+    validate_json_files
+
+    # Run post-cycle external validation
+    run_post_work_validation
+
+    # Commit changes
+    commit_work_changes "$cycle_num"
+}
+
+# Show work status summary
+show_work_status() {
+    echo ""
+    echo "┌──────────────────────────────────────────────────┐"
+    echo "│  Ralph Loop — Work Status                        │"
+    echo "└──────────────────────────────────────────────────┘"
+    echo ""
+
+    if [ ! -f "$WORK_STATE_FILE" ] || [ ! -f "$TASKS_FILE" ]; then
+        echo "Work mode not initialized. Run: $0 --setup"
+        return
+    fi
+
+    echo "=== Task Progress ==="
+    print_task_summary
+    echo ""
+
+    echo "=== Action Stats ==="
+    jq '.stats' "$WORK_STATE_FILE"
+    echo ""
+
+    echo "=== Blocked Tasks ==="
+    local blocked
+    blocked=$(jq -r '.tasks[] | select(.status == "blocked") | "  \(.id): \(.title)"' "$TASKS_FILE" 2>/dev/null)
+    if [ -n "$blocked" ]; then
+        echo "$blocked"
+    else
+        echo "  (none)"
+    fi
+    echo ""
+
+    echo "=== Failed Tasks ==="
+    local failed
+    failed=$(jq -r '.tasks[] | select(.status == "failed") | "  \(.id): \(.title) (\(.attempts | length) attempts)"' "$TASKS_FILE" 2>/dev/null)
+    if [ -n "$failed" ]; then
+        echo "$failed"
+    else
+        echo "  (none)"
+    fi
+    echo ""
+
+    echo "=== Last 5 Cycles ==="
+    jq '.cycles | [.[] | select(.type == "work")] | .[-5:]' "$CYCLE_LOG_FILE" 2>/dev/null || echo "  (no cycles yet)"
+}
+
+# Check if work loop should continue
+work_loop_should_continue() {
+    if [ ! -f "$TASKS_FILE" ]; then
+        return 0  # continue — no tasks yet, first cycle will create them
+    fi
+
+    local total pending in_progress
+    total=$(jq '.tasks | length' "$TASKS_FILE")
+    pending=$(jq '[.tasks[] | select(.status == "pending")] | length' "$TASKS_FILE")
+    in_progress=$(jq '[.tasks[] | select(.status == "in_progress")] | length' "$TASKS_FILE")
+
+    # Continue if no tasks yet (plan cycle needed)
+    if [ "$total" -eq 0 ]; then
+        return 0
+    fi
+
+    # Continue if there are pending or in_progress tasks
+    if [ "$pending" -gt 0 ] || [ "$in_progress" -gt 0 ]; then
+        return 0
+    fi
+
+    # No more actionable tasks
+    return 1
+}
+
+# ────────────────────────────────────────────────────────
 # DOCUMENTATION REFINEMENT FUNCTIONS
 # ────────────────────────────────────────────────────────
 
@@ -794,6 +1160,15 @@ for arg in "$@"; do
             ACTION="refine"
             REFINE_TARGET="${arg#--refine=}"
             ;;
+        --work)
+            ACTION="work"
+            ;;
+        --work-once)
+            ACTION="work-once"
+            ;;
+        --work-status)
+            ACTION="work-status"
+            ;;
         --status)
             ACTION="status"
             ;;
@@ -857,6 +1232,39 @@ case "${ACTION:-run}" in
         fi
         exit 0
         ;;
+    work)
+        check_dependencies
+        init_work_state
+        validate_json_files
+
+        log "╔═══════════════════════════════════════════════════════╗"
+        log "║       RALPH LOOP — Work Mode (Continuous)              ║"
+        log "╚═══════════════════════════════════════════════════════╝"
+
+        sleep_seconds=$(jq -r '.cycle_sleep_seconds // 10' "$CONFIG_FILE" 2>/dev/null || echo "10")
+
+        log "Press Ctrl+C to stop"
+        echo ""
+
+        while work_loop_should_continue; do
+            run_work_cycle || log_error "Work cycle failed, continuing..."
+            log "Sleeping for ${sleep_seconds}s before next cycle..."
+            echo ""
+            sleep "$sleep_seconds"
+        done
+
+        log_success "All tasks completed or blocked. Work loop finished."
+        show_work_status
+        ;;
+    work-once)
+        check_dependencies
+        init_work_state
+        validate_json_files
+        run_work_cycle
+        ;;
+    work-status)
+        show_work_status
+        ;;
     refine)
         run_refine "$REFINE_TARGET"
         exit 0
@@ -918,6 +1326,9 @@ case "${ACTION:-run}" in
         echo "  --discovery-only   Skip maintenance cycles (combinable)"
         echo "  --discovery-once   Run single discovery cycle only and exit"
         echo "  --maintenance      Force maintenance cycle (cleanup/consolidation)"
+        echo "  --work             Run continuous work loop until all tasks done/blocked"
+        echo "  --work-once        Run single work cycle and exit"
+        echo "  --work-status      Show task progress summary"
         echo "  --setup            Initialize _state/ directory with empty state files"
         echo "  --auto-setup       Detect sibling projects, generate configs, and run setup"
         echo "  --refine           Refine all service docs (add digests, compress, cross-ref)"
@@ -929,6 +1340,7 @@ case "${ACTION:-run}" in
         echo ""
         echo "Cycle types:"
         echo "  - Discovery: Explores code, documents concepts"
+        echo "  - Work: Self-directed implementation (plan → research → implement → fix)"
         echo "  - Maintenance: Rotates journals, audits docs, cleans state (every ${MAINTENANCE_CYCLE_INTERVAL} cycles)"
         echo ""
         echo "Maintenance runs automatically when:"
@@ -942,6 +1354,7 @@ case "${ACTION:-run}" in
         echo "  COMMIT_MSG_PREFIX               Commit message prefix (default: 'docs: discovery cycle')"
         echo "  USE_AGENTS                      Enable specialist subagents (default: true)"
         echo "  DISCOVERY_ONLY                  Skip maintenance (default: false)"
+        echo "  WORK_COMMIT_MSG_PREFIX          Work mode commit prefix (default: 'feat: work cycle')"
         echo "  CLAUDE_CODE_MAX_OUTPUT_TOKENS   Max output tokens (default: 64000, max: 64000)"
         echo "  MAX_THINKING_TOKENS             Extended thinking budget (default: 31999)"
         echo ""
@@ -950,6 +1363,9 @@ case "${ACTION:-run}" in
         echo "  $0 --once                       # Run single cycle"
         echo "  $0 --discovery-only             # Continuous loop, discovery only"
         echo "  $0 --discovery-once             # Single discovery cycle, no extras"
+        echo "  $0 --work                       # Continuous work until all tasks done"
+        echo "  $0 --work-once                  # Single work cycle and exit"
+        echo "  $0 --work-status                # Show task progress"
         echo "  $0 --refine                     # Refine all services"
         echo "  $0 --refine=my-api              # Refine one service"
         echo "  $0 --maintenance                # Force cleanup cycle"
