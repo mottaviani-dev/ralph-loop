@@ -1,0 +1,5 @@
+{
+  "name": "ralph-loop",
+  "private": true,
+  "description": "Ralph Loop - Claude Code plugin for recurring prompts and slash commands"
+}

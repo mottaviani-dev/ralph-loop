@@ -1,0 +1,35 @@
+{
+  "projects": [
+    {
+      "name": "symphony",
+      "path": "../symphony",
+      "mode": "work",
+      "model": "sonnet",
+      "env": {
+        "SKIP_COMMIT": "false",
+        "WORK_AGENT_TIMEOUT": "600"
+      },
+      "skip_if_complete": true
+    },
+    {
+      "name": "ralph-loop",
+      "path": "../ralph-loop",
+      "mode": "work",
+      "model": "opus",
+      "env": {},
+      "skip_if_complete": true
+    }
+  ],
+  "scheduling": {
+    "strategy": "round_robin",
+    "max_total_cycles": 100
+  },
+  "learnings": {
+    "shared": true,
+    "tag": "[cross-project]",
+    "max_inject_lines": 30
+  },
+  "notifications": {
+    "include_project_name": true
+  }
+}

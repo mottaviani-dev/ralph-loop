@@ -1,0 +1,22 @@
+{
+  "_comment": "Copy to $DOCS_DIR/.ralph-loop.json and remove this _comment key.",
+  "model": "sonnet",
+  "timeout": 600,
+  "skip_commit": false,
+  "max_work_cycles": 50,
+  "max_discovery_cycles": 0,
+  "max_consecutive_failures": 3,
+  "max_stale_cycles": 5,
+  "max_empty_task_cycles": 3,
+  "validate_before_commit": true,
+  "validate_commands_strict": false,
+  "use_agents": true,
+  "discovery_only": false,
+  "journal_keep_lines": 300,
+  "enable_mcp": false,
+  "verbose_cleanup": false,
+  "notify": {
+    "on": ["complete", "error"]
+  },
+  "git_exclude": []
+}

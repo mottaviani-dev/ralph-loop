@@ -1,0 +1,16 @@
+# Symphony
+.symphony-workspaces/
+docs/tickets
+
+# State
+_state/
+_snapshots/
+
+# Temp
+*.tmp
+__pycache__
+.pytest_cache
+.worktrees
+
+# Symphony
+symphony.config.local.json
