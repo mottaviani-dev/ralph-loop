@@ -95,3 +95,21 @@ Work through `../docs/concepts/` alphabetically. Skip files with no `:::warning`
 After completing all files, re-scan for newly created docs by the discovery loop: `git log --oneline -10 -- ../docs/`
 
 **DO NOT** declare the task complete. This is a recurring loop.
+
+## Current Status (cycle 24, 2026-04-04)
+
+**Doc scanning complete**: All 66 `docs/concepts/` files processed. Zero `:::warning` blocks remain.
+
+**Resolved in cycles 1-23**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles.
+
+**Remaining actionable items** (priority order):
+1. `addCustomer()` dialog — `my-customers.component.ts:186` (needs v1 customer lead form reference)
+2. `openCustomerFormNew()` dialog — `all-customers.component.ts:117` (needs v1 customer form modal)
+3. `previewLead()` dialog — `leads.component.ts:166` (needs dialog integration)
+4. Phase 2 auth forms — register + reset password UI (service methods exist, no form UI)
+5. Support table Material upgrade — sort, filter, pagination, expandable rows
+
+**Architectural items** (tracked in pending-work.md, lower priority):
+- Typed interfaces for Customer, Destination, User
+- `signal<any>` cleanup in CartService/AccountService
+- Dark mode, theming, config validation
