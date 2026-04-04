@@ -86,7 +86,7 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 
 **DO NOT** declare the task complete. This is a recurring loop.
 
-## Current Status (cycle 27, 2026-04-04)
+## Current Status (cycle 28, 2026-04-04)
 
 **Doc scanning complete**: All 66 `docs/concepts/` files processed. Zero `:::warning` blocks remain.
 
@@ -94,7 +94,7 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 
 **Remaining actionable items** (priority order):
 1. ~~`openCustomerFormNew()` dialog~~ — **Resolved** (cycle #27).
-2. `previewLead()` dialog — `leads.component.ts:165` — **MEDIUM**: Create read-only lead preview component. Uses `CartService.getLead(email, id)` which already exists.
+2. ~~`previewLead()` dialog~~ — **Resolved** (cycle #28). LeadPreviewComponent opened via MatDialog with customer details, shop details, shipping/payment, and order cart table.
 3. `addCustomer()` dialog — `my-customers.component.ts:186` — **LARGEST**: Create new `CustomerLeadFormComponent` with 3 sections (basic: 16 fields, commercial: 7 select dropdowns + shipping addresses, internal: 7 fields). All 5 API methods exist in v2 AccountService.
 4. Support table Material upgrade — sort, filter, pagination, expandable rows
 
@@ -103,4 +103,4 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
 
-<!-- Last updated: cycle 27, 2026-04-04 -->
+<!-- Last updated: cycle 28, 2026-04-04 -->
