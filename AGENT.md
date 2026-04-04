@@ -63,7 +63,16 @@ When appending, use this format:
 
 ## Cycle Priority
 
-1. First scan `pending-work.md` to avoid duplicating entries
-2. Then scan docs for new gaps (start with `concepts/` since those have the most business logic)
-3. Pick ONE gap to resolve per cycle
-4. Fix or append, then update journal
+1. Read `pending-work.md` to avoid duplicating entries you've already logged
+2. Read your journal to know which doc files you've already scanned
+3. Pick the NEXT unscanned doc file — work through them systematically:
+   - `../docs/concepts/*.md` (most gaps here)
+   - `../docs/reference/*.md`
+   - `../docs/guides/*.md`
+4. Within that file, find ALL :::warning blocks, "Gap", "Missing", "Not implemented", "Stub" mentions
+5. For each gap: fix if trivial, or append to pending-work.md if complex
+6. Record which file you scanned in your journal so you don't repeat it
+
+**IMPORTANT**: New docs are being written by a parallel discovery loop. Even after you've scanned all files once, re-scan files that have been updated (check file modification dates or git status). This task is NEVER truly done — keep scanning for new gaps.
+
+**DO NOT** declare the task complete. It is a recurring scan loop. If you run out of files, wait for the discovery loop to produce more — check `git log --oneline -5 -- ../docs/` to see recent doc updates.
