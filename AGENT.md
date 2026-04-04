@@ -86,11 +86,11 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 
 **DO NOT** declare the task complete. This is a recurring loop.
 
-## Current Status (cycle 43, 2026-04-04)
+## Current Status (cycle 44, 2026-04-04)
 
 **Doc scanning complete**: All 66 `docs/concepts/` files + 10 reference/guides files processed. Zero `:::warning` blocks remain.
 
-**Resolved in cycles 1-43**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog), lead preview dialog, customer lead form dialog, support table Material upgrade, provider report Material table upgrade, customer report Material table upgrade, commissions Material table upgrade, `parseDdMmYy()` shared utility extraction, orders-status Material table upgrade, 4 missing complain reason codes restored (204, 205, 212, 213).
+**Resolved in cycles 1-44**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog), lead preview dialog, customer lead form dialog, support table Material upgrade, provider report Material table upgrade, customer report Material table upgrade, commissions Material table upgrade, `parseDdMmYy()` shared utility extraction, orders-status Material table upgrade, 4 missing complain reason codes restored (204, 205, 212, 213), product card image zoom toggle.
 
 **All TODO stubs resolved.** Zero `/* TODO */` method stubs remain in the codebase.
 
@@ -112,4 +112,4 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
 
-<!-- Last updated: cycle 43, 2026-04-04 -->
+<!-- Last updated: cycle 44, 2026-04-04 -->
