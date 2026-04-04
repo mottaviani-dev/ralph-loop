@@ -106,7 +106,7 @@ After completing all files, re-scan for newly created docs by the discovery loop
 1. `addCustomer()` dialog — `my-customers.component.ts:186` (needs v1 customer lead form reference)
 2. `openCustomerFormNew()` dialog — `all-customers.component.ts:117` (needs v1 customer form modal)
 3. `previewLead()` dialog — `leads.component.ts:166` (needs dialog integration)
-4. Phase 2 auth forms — register + reset password UI (service methods exist, no form UI)
+4. ~~Phase 2 auth forms~~ — Resolved (cycle #25). Register form + reset/recover password page fully implemented.
 5. Support table Material upgrade — sort, filter, pagination, expandable rows
 
 **Architectural items** (tracked in pending-work.md, lower priority):
