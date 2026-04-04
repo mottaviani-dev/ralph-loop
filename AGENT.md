@@ -86,47 +86,27 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 
 **DO NOT** declare the task complete. This is a recurring loop.
 
-## Current Status (cycle 30, 2026-04-04)
+## Current Status (cycle 35, 2026-04-04)
 
-**Doc scanning complete**: All 66 `docs/concepts/` files processed. Zero `:::warning` blocks remain.
+**Doc scanning complete**: All 66 `docs/concepts/` files + 10 reference/guides files processed. Zero `:::warning` blocks remain.
 
-**Resolved in cycles 1-30**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog), lead preview dialog, customer lead form dialog.
+**Resolved in cycles 1-35**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog), lead preview dialog, customer lead form dialog, support table Material upgrade.
 
 **All TODO stubs resolved.** Zero `/* TODO */` method stubs remain in the codebase.
 
-**Remaining actionable items** (priority order):
+**Resolved actionable items**:
 1. ~~`openCustomerFormNew()` dialog~~ — **Resolved** (cycle #27).
 2. ~~`previewLead()` dialog~~ — **Resolved** (cycle #28).
-3. ~~`addCustomer()` dialog~~ — **Resolved** (cycle #30). CustomerLeadFormComponent with 3-section reactive form, existing leads list, 8 label dropdowns.
-4. **Support table Material upgrade** — NEXT (researched cycle #34, implement cycle #35)
+3. ~~`addCustomer()` dialog~~ — **Resolved** (cycle #30).
+4. ~~**Support table Material upgrade**~~ — **Resolved** (cycle #35). Full mat-table with sort, filter, pagination (25/50/100), expandable detail rows, support type labels, bill navigation, `@detailExpand` animation, custom date sort accessor. Uses `viewChild()` signals, `MatTableDataSource` per tab, `NgTemplateOutlet` for shared table template.
 
-### Support Table Implementation Plan (cycle #34 research)
-
-**File**: `src/app/features/account/support-requests/support-requests.component.ts`
-
-**Current state**: Simple `@for` loop with `div.support-item`, 3 fields only. Material modules imported but unused.
-
-**Target**: Match v1's `SupportTableComponent` using v2 patterns.
-
-**Changes needed**:
-1. Replace `@for` loops with `mat-table` + `MatTableDataSource` (one per tab)
-2. Add `viewChild` signals for `MatSort` and `MatPaginator` (one set per tab, or switch datasource on tab change)
-3. **Columns**: expand toggle, `support_type`, `ref_num`, `date`, `product_name`, `credit_memo`, `bill`
-4. **Support type labels**: map 0-5 → Italian strings via translate pipe (Assistenza - Da inviare/Inviata/Rientrato, Sostituzione, Mancante, Nota Credito)
-5. **Text filter**: `mat-form-field` input → `dataSource.filter`
-6. **Expandable rows**: `@detailExpand` animation, load detail via `AccountService.getSupportDetail(customer, refNum.substring(0, 5))`
-7. **Default sort**: date desc, custom `sortingDataAccessor` for `dd/mm/yy` → Date
-8. **Bill link**: navigate to bill detail or open in new tab
-9. **Detail grid**: two-column key-value layout from indexed array (positions 0-39)
-10. **Paginator**: `[25, 50, 100]` page size options
-
-**V2 patterns to follow**: `viewChild.required()` for sort/paginator, `signal()` for expanded element, `@if`/`@for` control flow (already used), `inject()` (already used).
-
-**API methods available**: `getSupports()`, `getSupportsCompleted()`, `getSupportDetail()` — all exist in AccountService.
+**Remaining actionable items** (priority order):
+1. **Report table Material upgrades** — provider and customer report tables still use plain HTML tables (sort/paginate/filter missing)
+2. **Commissions table Material upgrade** — basic HTML table, missing sort/paginate/filter, date range picker, chart
 
 **Architectural items** (tracked in pending-work.md, lower priority):
 - Typed interfaces for Customer, Destination, User
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
 
-<!-- Last updated: cycle 34, 2026-04-04 -->
+<!-- Last updated: cycle 35, 2026-04-04 -->
