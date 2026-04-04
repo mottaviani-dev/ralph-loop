@@ -102,12 +102,14 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 5. ~~**Provider report Material table upgrade**~~ — **Resolved** (cycle #36).
 6. ~~**Customer report Material table upgrade**~~ — **Resolved** (cycle #37). mat-table with sort/filter/paginate (25/50/100), totals footer row, custom date sort accessor, per-zone `MatTableDataSource`, `NgTemplateOutlet` for shared table+filter templates.
 
-**Remaining actionable items** (priority order):
-1. **Commissions table Material upgrade** — basic HTML table, missing sort/paginate/filter, date range picker, chart
+**All Material table upgrades complete.** Support, provider report, customer report, commissions — all 4 upgraded to mat-table with sort/filter/paginate/totals. Evaluated in cycle 39 — PASS with no issues.
+
+**Remaining actionable items**: none (all code-level gaps resolved).
 
 **Architectural items** (tracked in pending-work.md, lower priority):
 - Typed interfaces for Customer, Destination, User
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
+- `parseDdMmYy()` duplicated across 4 table components — candidate for shared utility
 
-<!-- Last updated: cycle 36, 2026-04-04 -->
+<!-- Last updated: cycle 39, 2026-04-04 -->
