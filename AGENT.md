@@ -2,13 +2,13 @@
 
 ## Mission
 
-Read documentation files in `../docs/`, understand the v1 business logic described there, then port ALL missing functionality to v2 in a single pass per doc file.
+Read documentation alphabetically files in `../docs/`, understand the v1 business logic described there, review implementation in v1 ng-sir, then port ALL missing functionality to v2 in a single pass per doc file according to the new architecture.
 
 ## Cycle Workflow
 
 Each cycle targets ONE documentation file and resolves ALL its gaps:
 
-1. **Pick a doc file** — check journal for already-processed files, pick the next unprocessed one from `../docs/concepts/`
+1. **Pick a doc file alphabetically** — check journal for already-processed files, pick the next unprocessed one from `../docs/concepts/`
 2. **Read the doc thoroughly** — understand the full feature as documented (v1 behavior, API calls, data flow, edge cases)
 3. **Read the v1 source code** referenced in the doc — understand HOW it actually works, not just what the doc says
 4. **Read the corresponding v2 code** — understand what's already implemented and what's missing
@@ -64,14 +64,6 @@ Requires architecture decision. See [pending-work.md](/reference/pending-work).
 - CSS/styling gaps
 - Missing imports, routes, or wiring
 
-**Track in pending-work.md** (don't fix):
-- Features requiring entirely new components that don't exist yet
-- Changes to the API backend
-- Features requiring new packages/dependencies not yet installed
-- Architectural redesigns (e.g., "v1 uses jQuery for this, v2 needs a completely different approach")
-
-## pending-work.md Format
-
 ```markdown
 ### [Category] — [Brief description]
 
@@ -90,22 +82,20 @@ Requires architecture decision. See [pending-work.md](/reference/pending-work).
 
 ## File Processing Order
 
-Work through `../docs/concepts/` alphabetically. Skip files with no `:::warning` blocks. After all concepts, process `../docs/reference/` and `../docs/guides/`.
-
-After completing all files, re-scan for newly created docs by the discovery loop: `git log --oneline -10 -- ../docs/`
+Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete features in it. After all concepts, process `../docs/reference/` and `../docs/guides/`.
 
 **DO NOT** declare the task complete. This is a recurring loop.
 
-## Current Status (cycle 26, 2026-04-04)
+## Current Status (cycle 27, 2026-04-04)
 
 **Doc scanning complete**: All 66 `docs/concepts/` files processed. Zero `:::warning` blocks remain.
 
-**Resolved in cycles 1-25**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password).
+**Resolved in cycles 1-27**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog).
 
-**Remaining actionable items** (priority order — updated after cycle 26 RESEARCH):
-1. `openCustomerFormNew()` dialog — `all-customers.component.ts:117` — **EASIEST**: v2 `CustomerFormComponent` already exists at `shared/components/customer-form/`. Just wrap in `MatDialog.open()` passing `customer` and `mode:'new'` as data.
-2. `previewLead()` dialog — `leads.component.ts:165` — **MEDIUM**: Create read-only lead preview component (customer details, shop details, shipping/payment method, order cart table with totals). Uses `CartService.getLead(email, id)` which already exists.
-3. `addCustomer()` dialog — `my-customers.component.ts:186` — **LARGEST**: Create new `CustomerLeadFormComponent` with 3 sections (basic: 16 fields, commercial: 7 select dropdowns + shipping addresses, internal: 7 fields). All 5 API methods exist in v2 AccountService (`sendCustomerLead`, `getCustomerLeads`, `getCustomerLead`, `deleteCustomerLead`, `getCustomerLeadLabels`). V1 loads label options (activity_type, payment_type, bank_type, shipping_type, transportation_type, closure_type, ass_fcs_type, giro_type) on init and pre-selects first option.
+**Remaining actionable items** (priority order):
+1. ~~`openCustomerFormNew()` dialog~~ — **Resolved** (cycle #27).
+2. `previewLead()` dialog — `leads.component.ts:165` — **MEDIUM**: Create read-only lead preview component. Uses `CartService.getLead(email, id)` which already exists.
+3. `addCustomer()` dialog — `my-customers.component.ts:186` — **LARGEST**: Create new `CustomerLeadFormComponent` with 3 sections (basic: 16 fields, commercial: 7 select dropdowns + shipping addresses, internal: 7 fields). All 5 API methods exist in v2 AccountService.
 4. Support table Material upgrade — sort, filter, pagination, expandable rows
 
 **Architectural items** (tracked in pending-work.md, lower priority):
@@ -113,4 +103,4 @@ After completing all files, re-scan for newly created docs by the discovery loop
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
 
-<!-- Last updated: cycle 26, 2026-04-04 -->
+<!-- Last updated: cycle 27, 2026-04-04 -->

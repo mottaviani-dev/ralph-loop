@@ -364,7 +364,9 @@ commit_work_changes() {
             commit_msg="$commit_msg [$action]"
         fi
 
-        git add -A -- "${GIT_EXCLUDE_PATHSPECS[@]}"
+        # || true: git add exits 1 when an excluded path is gitignored
+        # (e.g. _state/ in .gitignore), but files are still staged correctly.
+        git add -A -- "${GIT_EXCLUDE_PATHSPECS[@]}" || true
 
         # Audit log: show what was staged
         local _staged_count
