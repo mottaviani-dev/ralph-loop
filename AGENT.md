@@ -14,11 +14,39 @@ Read the VitePress documentation files in `../docs/` and resolve the gaps docume
 
 ## Rules
 
-- **DO NOT modify any `.md` files in `../docs/`** — the discovery loop owns those. Only modify source code in `../src/app/` and the `pending-work.md` file.
 - **DO NOT create new documentation files** — only the discovery loop does that.
+- **You MAY edit existing `.md` files in `../docs/`** but ONLY to mark resolved gaps. Do not rewrite content, add new sections, or change documentation the discovery loop wrote.
 - **One gap per cycle** — pick the highest-impact trivial gap and fix it.
-- **Test after fixing** — run `yarn ng build` from `..` to verify the fix compiles.
+- **Test after fixing** — run `cd .. && yarn ng build` to verify the fix compiles.
 - **Evidence in journal** — record which doc, which gap, what you fixed, and the build result.
+
+## Marking Gaps as Resolved
+
+After fixing a gap in source code, update the doc file to reflect the resolution:
+
+**Before** (gap documented by discovery loop):
+```markdown
+:::warning V2 Gap
+The `setCanonical()` method exists in SeoService but is never called from any component.
+:::
+```
+
+**After** (you fixed it and mark it resolved):
+```markdown
+:::tip Resolved
+~~The `setCanonical()` method exists in SeoService but is never called from any component.~~
+Fixed in cycle #N — SeoService.setCanonical() now called in ProductDetailKitPageComponent and CategoryPageComponent.
+:::
+```
+
+Use `:::tip Resolved` to replace `:::warning`. Keep the original text as strikethrough (`~~...~~`) so the history is visible. Add a one-line note saying what was fixed.
+
+For gaps you append to `pending-work.md` (complex/architecture), update the doc to:
+```markdown
+:::info Tracked
+This gap requires architecture decisions. Tracked in [pending-work.md](/reference/pending-work).
+:::
+```
 
 ## What Counts as Trivial
 
