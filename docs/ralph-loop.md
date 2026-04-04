@@ -61,7 +61,7 @@ External signals determine completion (not LLM self-assessment):
 
 ## Compound Learning
 
-The META-IMPROVE action (every 10 cycles) creates a compound learning loop:
+The META-IMPROVE action (approximately every 10 cycles, agent-decided) creates a compound learning loop:
 
 1. Analyze the last 10 cycles for patterns
 2. Write reusable recipes to `_state/recipes/`
