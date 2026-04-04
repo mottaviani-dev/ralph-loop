@@ -98,11 +98,35 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 1. ~~`openCustomerFormNew()` dialog~~ — **Resolved** (cycle #27).
 2. ~~`previewLead()` dialog~~ — **Resolved** (cycle #28).
 3. ~~`addCustomer()` dialog~~ — **Resolved** (cycle #30). CustomerLeadFormComponent with 3-section reactive form, existing leads list, 8 label dropdowns.
-4. Support table Material upgrade — sort, filter, pagination, expandable rows
+4. **Support table Material upgrade** — NEXT (researched cycle #34, implement cycle #35)
+
+### Support Table Implementation Plan (cycle #34 research)
+
+**File**: `src/app/features/account/support-requests/support-requests.component.ts`
+
+**Current state**: Simple `@for` loop with `div.support-item`, 3 fields only. Material modules imported but unused.
+
+**Target**: Match v1's `SupportTableComponent` using v2 patterns.
+
+**Changes needed**:
+1. Replace `@for` loops with `mat-table` + `MatTableDataSource` (one per tab)
+2. Add `viewChild` signals for `MatSort` and `MatPaginator` (one set per tab, or switch datasource on tab change)
+3. **Columns**: expand toggle, `support_type`, `ref_num`, `date`, `product_name`, `credit_memo`, `bill`
+4. **Support type labels**: map 0-5 → Italian strings via translate pipe (Assistenza - Da inviare/Inviata/Rientrato, Sostituzione, Mancante, Nota Credito)
+5. **Text filter**: `mat-form-field` input → `dataSource.filter`
+6. **Expandable rows**: `@detailExpand` animation, load detail via `AccountService.getSupportDetail(customer, refNum.substring(0, 5))`
+7. **Default sort**: date desc, custom `sortingDataAccessor` for `dd/mm/yy` → Date
+8. **Bill link**: navigate to bill detail or open in new tab
+9. **Detail grid**: two-column key-value layout from indexed array (positions 0-39)
+10. **Paginator**: `[25, 50, 100]` page size options
+
+**V2 patterns to follow**: `viewChild.required()` for sort/paginator, `signal()` for expanded element, `@if`/`@for` control flow (already used), `inject()` (already used).
+
+**API methods available**: `getSupports()`, `getSupportsCompleted()`, `getSupportDetail()` — all exist in AccountService.
 
 **Architectural items** (tracked in pending-work.md, lower priority):
 - Typed interfaces for Customer, Destination, User
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
 
-<!-- Last updated: cycle 30, 2026-04-04 -->
+<!-- Last updated: cycle 34, 2026-04-04 -->
