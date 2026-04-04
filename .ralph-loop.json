@@ -2,15 +2,19 @@
   "model": "sonnet",
   "timeout": 600,
   "skip_commit": true,
+  "max_work_cycles": 100,
   "max_discovery_cycles": 0,
-  "max_consecutive_failures": 3,
-  "max_stale_cycles": 5,
-  "discovery_only": true,
-  "use_agents": true,
+  "max_consecutive_failures": 5,
+  "max_stale_cycles": 10,
+  "max_empty_task_cycles": 5,
+  "validate_before_commit": false,
+  "use_agents": false,
+  "discovery_only": false,
   "journal_keep_lines": 300,
   "enable_mcp": false,
   "verbose_cleanup": false,
   "notify": {
     "on": ["complete", "error"]
-  }
+  },
+  "git_exclude": []
 }
