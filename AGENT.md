@@ -2,105 +2,96 @@
 
 ## Mission
 
-Read the VitePress documentation files in `../docs/` and resolve the gaps documented there. Another agent is continuously writing these docs — your job is to act on them.
+Read documentation files in `../docs/`, understand the v1 business logic described there, then port ALL missing functionality to v2 in a single pass per doc file.
 
-## How It Works
+## Cycle Workflow
 
-1. Scan all `.md` files in `../docs/concepts/`, `../docs/guides/`, `../docs/reference/`
-2. Find sections marked with `:::warning` or containing "Gap", "Missing", "TODO", "Not implemented", "Stub", "v2 does not"
-3. For each gap, decide:
-   - **Trivial fix** (missing import, stub method, wrong path, simple logic port) → fix it directly in `../src/app/`
-   - **Architecture decision needed** → append to `../docs/reference/pending-work.md` and leave the gap section unresolved
+Each cycle targets ONE documentation file and resolves ALL its gaps:
+
+1. **Pick a doc file** — check journal for already-processed files, pick the next unprocessed one from `../docs/concepts/`
+2. **Read the doc thoroughly** — understand the full feature as documented (v1 behavior, API calls, data flow, edge cases)
+3. **Read the v1 source code** referenced in the doc — understand HOW it actually works, not just what the doc says
+4. **Read the corresponding v2 code** — understand what's already implemented and what's missing
+5. **Implement ALL gaps for that feature in v2** — port the v1 logic following v2 patterns (standalone components, signals, inject(), OnPush)
+6. **Run `cd .. && yarn ng build`** to verify everything compiles
+7. **Update the doc file** — mark all resolved gaps as `:::tip Resolved`, track complex ones as `:::info Tracked`
+8. **Record in journal** — which file, how many gaps resolved, how many tracked, files modified
+
+## V2 Architecture Patterns
+
+When porting from v1, follow these v2 patterns:
+
+- **Services**: Use `inject()`, `signal()`, `computed()`. NOT constructor injection or BehaviorSubject.
+- **Components**: `standalone: true`, `ChangeDetectionStrategy.OnPush`, `@if`/`@for` control flow. NOT NgModule, NOT *ngIf/*ngFor.
+- **Forms**: ReactiveFormsModule with typed FormGroup. NOT template-driven.
+- **HTTP**: Return Observable from service, subscribe in component, update signal with result.
+- **Dialogs**: Use `MatDialog` / CDK Dialog. NOT a shared ModalService with Subjects.
+- **State**: Signals for component state, services for shared state. NOT manual ChangeDetectorRef.markForCheck().
 
 ## Rules
 
-- **DO NOT create new documentation files** — only the discovery loop does that.
-- **You MAY edit existing `.md` files in `../docs/`** but ONLY to mark resolved gaps. Do not rewrite content, add new sections, or change documentation the discovery loop wrote.
-- **One gap per cycle** — pick the highest-impact trivial gap and fix it.
-- **Test after fixing** — run `cd .. && yarn ng build` to verify the fix compiles.
-- **Evidence in journal** — record which doc, which gap, what you fixed, and the build result.
+- **ONE doc file per cycle, ALL gaps in that file** — don't cherry-pick individual gaps across files.
+- **Read v1 code BEFORE implementing** — the doc describes behavior, but the v1 source has the actual implementation details, edge cases, and calculations you need.
+- **You MAY edit `.md` files in `../docs/`** but ONLY to mark gaps as resolved/tracked. Do not rewrite documentation content.
+- **DO NOT create new documentation files.**
+- **Build MUST pass** — run `cd .. && yarn ng build` after all changes. If it fails, fix it before finishing the cycle.
 
-## Marking Gaps as Resolved
+## Marking Gaps in Docs
 
-After fixing a gap in source code, update the doc file to reflect the resolution:
-
-**Before** (gap documented by discovery loop):
-```markdown
-:::warning V2 Gap
-The `setCanonical()` method exists in SeoService but is never called from any component.
-:::
-```
-
-**After** (you fixed it and mark it resolved):
+**Resolved** (you fixed it in code):
 ```markdown
 :::tip Resolved
-~~The `setCanonical()` method exists in SeoService but is never called from any component.~~
-Fixed in cycle #N — SeoService.setCanonical() now called in ProductDetailKitPageComponent and CategoryPageComponent.
+~~Original gap description here.~~
+Fixed in cycle #N — brief description of what was implemented.
 :::
 ```
 
-Use `:::tip Resolved` to replace `:::warning`. Keep the original text as strikethrough (`~~...~~`) so the history is visible. Add a one-line note saying what was fixed.
-
-For gaps you append to `pending-work.md` (complex/architecture), update the doc to:
+**Tracked** (needs architecture decision, appended to pending-work.md):
 ```markdown
 :::info Tracked
-This gap requires architecture decisions. Tracked in [pending-work.md](/reference/pending-work).
+~~Original gap description here.~~
+Requires architecture decision. See [pending-work.md](/reference/pending-work).
 :::
 ```
 
-## What Counts as Trivial
+## What to Fix vs Track
 
-Fix these directly:
-- A v2 service method is a stub that should call an API endpoint (the doc tells you which one)
-- A v2 component is missing a feature that the doc describes and the v1 code shows how to implement
-- A CSS/SCSS issue where the doc describes the expected styling
-- A missing route that the doc says should exist
-- A config field that needs updating
-- A component not importing a required module
+**Fix directly** (port from v1):
+- Service methods that are stubs or empty
+- Component logic that's missing (event handlers, data loading, calculations)
+- Missing API calls that the doc describes
+- Template features missing (conditional UI, role-based visibility)
+- CSS/styling gaps
+- Missing imports, routes, or wiring
 
-## What Counts as Architecture Decision
-
-Append to `pending-work.md` instead:
-- "v2 needs a completely different component structure for this"
-- "The v1 approach won't work in v2 because of [signals/standalone/etc]"
-- "This feature requires a new service that doesn't exist yet"
-- "The API response format needs to change"
-- "This involves multiple components coordinating in a way that needs design"
+**Track in pending-work.md** (don't fix):
+- Features requiring entirely new components that don't exist yet
+- Changes to the API backend
+- Features requiring new packages/dependencies not yet installed
+- Architectural redesigns (e.g., "v1 uses jQuery for this, v2 needs a completely different approach")
 
 ## pending-work.md Format
 
-When appending, use this format:
 ```markdown
 ### [Category] — [Brief description]
 
-**Source**: docs/concepts/[filename].md — [section name]
+**Source**: docs/concepts/[filename].md
 **V1 behavior**: [what v1 does]
-**V2 status**: [what v2 currently does/doesn't do]
+**V2 status**: [current state]
 **Effort**: Small / Medium / Large
-**Needs**: [what decision or work is required]
+**Needs**: [what's required]
 ```
 
 ## Source Code Locations
 
-- V2 app code: `../src/app/`
-- V2 services: `../src/app/core/`
-- V2 components: `../src/app/shared/components/` and `../src/app/features/`
-- V2 styles: `../src/styles/`
-- V1 reference: `../../ng-sir/src/app/` (read-only, for comparison)
-- Build command: `cd .. && yarn ng build`
+- V2 source: `../src/app/`
+- V1 reference: `../../ng-sir/src/app/` (read-only)
+- Build: `cd .. && yarn ng build`
 
-## Cycle Priority
+## File Processing Order
 
-1. Read `pending-work.md` to avoid duplicating entries you've already logged
-2. Read your journal to know which doc files you've already scanned
-3. Pick the NEXT unscanned doc file — work through them systematically:
-   - `../docs/concepts/*.md` (most gaps here)
-   - `../docs/reference/*.md`
-   - `../docs/guides/*.md`
-4. Within that file, find ALL :::warning blocks, "Gap", "Missing", "Not implemented", "Stub" mentions
-5. For each gap: fix if trivial, or append to pending-work.md if complex
-6. Record which file you scanned in your journal so you don't repeat it
+Work through `../docs/concepts/` alphabetically. Skip files with no `:::warning` blocks. After all concepts, process `../docs/reference/` and `../docs/guides/`.
 
-**IMPORTANT**: New docs are being written by a parallel discovery loop. Even after you've scanned all files once, re-scan files that have been updated (check file modification dates or git status). This task is NEVER truly done — keep scanning for new gaps.
+After completing all files, re-scan for newly created docs by the discovery loop: `git log --oneline -10 -- ../docs/`
 
-**DO NOT** declare the task complete. It is a recurring scan loop. If you run out of files, wait for the discovery loop to produce more — check `git log --oneline -5 -- ../docs/` to see recent doc updates.
+**DO NOT** declare the task complete. This is a recurring loop.
