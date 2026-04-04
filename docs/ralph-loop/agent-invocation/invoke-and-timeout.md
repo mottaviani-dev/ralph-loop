@@ -117,7 +117,7 @@ Then each caller:
 | `lib/common.sh:145-190` | `run_with_timeout()` — portable timeout with watchdog subprocess |
 | `lib/common.sh:131-139` | `_deregister_cleanup_pids()` — exact-match PID array cleanup |
 | `lib/cleanup.sh:13-83` | `_do_cleanup()` — EXIT trap that kills registered PIDs and removes temp files |
-| `tests/test_invoke_claude_agent.sh` | 9 unit tests covering status mapping, output capture, --agents flag, custom timeout, missing args, duration |
+| `tests/test_invoke_claude_agent.sh` | 7 unit tests covering status mapping, output capture, --agents flag, custom timeout, missing args |
 
 ## Design Decisions
 
