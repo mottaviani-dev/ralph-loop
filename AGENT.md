@@ -86,11 +86,11 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 
 **DO NOT** declare the task complete. This is a recurring loop.
 
-## Current Status (cycle 37, 2026-04-04)
+## Current Status (cycle 41, 2026-04-04)
 
 **Doc scanning complete**: All 66 `docs/concepts/` files + 10 reference/guides files processed. Zero `:::warning` blocks remain.
 
-**Resolved in cycles 1-37**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog), lead preview dialog, customer lead form dialog, support table Material upgrade, provider report Material table upgrade, customer report Material table upgrade.
+**Resolved in cycles 1-41**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog), lead preview dialog, customer lead form dialog, support table Material upgrade, provider report Material table upgrade, customer report Material table upgrade, commissions Material table upgrade, `parseDdMmYy()` shared utility extraction, orders-status Material table upgrade.
 
 **All TODO stubs resolved.** Zero `/* TODO */` method stubs remain in the codebase.
 
@@ -100,9 +100,10 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 3. ~~`addCustomer()` dialog~~ — **Resolved** (cycle #30).
 4. ~~**Support table Material upgrade**~~ — **Resolved** (cycle #35).
 5. ~~**Provider report Material table upgrade**~~ — **Resolved** (cycle #36).
-6. ~~**Customer report Material table upgrade**~~ — **Resolved** (cycle #37). mat-table with sort/filter/paginate (25/50/100), totals footer row, custom date sort accessor, per-zone `MatTableDataSource`, `NgTemplateOutlet` for shared table+filter templates.
+6. ~~**Customer report Material table upgrade**~~ — **Resolved** (cycle #37).
+7. ~~**Orders-status Material table upgrade**~~ — **Resolved** (cycle #41). mat-table with sort/filter/paginate (25/50/100), expandable detail rows with order line items, custom sort accessor (date/currency/integer), per-zone `MatTableDataSource`, `NgTemplateOutlet` for shared table template, query param filter support.
 
-**All Material table upgrades complete.** Support, provider report, customer report, commissions — all 4 upgraded to mat-table with sort/filter/paginate/totals. Evaluated in cycle 39 — PASS with no issues.
+**All Material table upgrades complete.** Support, provider report, customer report, commissions, orders-status — all 5 upgraded to mat-table with sort/filter/paginate. Evaluated in cycle 39 (first 4) — PASS with no issues.
 
 **Remaining actionable items**: none (all code-level gaps resolved).
 
@@ -110,6 +111,5 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 - Typed interfaces for Customer, Destination, User
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
-- `parseDdMmYy()` duplicated across 4 table components — candidate for shared utility
 
-<!-- Last updated: cycle 39, 2026-04-04 -->
+<!-- Last updated: cycle 41, 2026-04-04 -->
