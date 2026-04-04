@@ -1,59 +1,61 @@
 # Discovery Process
 
-Iterative process for documenting a codebase through automated exploration.
+## Overview
 
-## Loop Structure
+Iterative process for documenting a codebase through automated exploration. Ralph-loop's discovery mode (`--once` or continuous) invokes Claude with `prompts/discovery.md` to explore one module or feature per cycle, producing structured documentation in `docs/`.
 
-Each module goes through this cycle:
+## How It Works
+
+Each discovery cycle follows this flow:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     DISCOVERY LOOP                              │
-│                                                                 │
-│   EXPLORE ──> DOCUMENT ──> VALIDATE ──> REFINE ──>             │
-│      │                                        │                 │
-│      └────────────────────────────────────────┘                 │
+│                     DISCOVERY CYCLE                              │
+│                                                                  │
+│   STARTUP ──> EXPLORE ──> DOCUMENT ──> UPDATE STATE ──>         │
+│      │                                        │                  │
+│      └────────────────────────────────────────┘                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Phase 1: EXPLORE
-- Read codebase structure
-- Identify domain concepts
-- Map integrations and data flows
-- Note patterns and anti-patterns
+### Startup Sequence
+1. Read `_state/config.json` for module paths
+2. Read `_state/journal.md` and `_state/journal-summary.md` for prior discoveries
+3. Read `_state/frontier.json` for current focus and exploration queue
 
-### Phase 2: DOCUMENT
-- Write concept documentation
-- Create API/contract summaries
-- Document business rules
-- Capture edge cases
+### Explore
+- Discover features by examining actual code entry points (routes, components, services, models)
+- Feature-first approach: trace concrete features end-to-end, not abstract patterns
+- Evidence over inference — only document what is found in code
 
-### Phase 3: VALIDATE
-- Cross-reference with tests
-- Verify against actual behavior
-- Check for gaps
+### Document
+- Write concept documentation under `docs/`
+- Capture business rules, design decisions, and edge cases
+- Follow the [style guide](../config/style-guide.md) conventions
 
-### Phase 4: REFINE
-- Update based on findings
-- Plan next iteration
-- Update progress tracking
+### Update State
+- Update `_state/frontier.json` with discovered concepts and next targets
+- Log findings in `_state/journal.md`
+- Track gaps in `docs/<module>/_gaps.md` files
 
-## Tracking Files
+## Key Components
 
-Each documented module maintains:
+| File | Responsibility |
+|------|---------------|
+| `prompts/discovery.md` | Discovery agent prompt template |
+| `_state/frontier.json` | Exploration queue and discovered concepts |
+| `_state/config.json` | Module paths and service configuration |
+| `_state/journal.md` | Cycle-by-cycle discovery log |
 
-```
-docs/<module>/
-├── README.md              # Module overview
-├── features/              # Domain feature documentation
-├── _gaps.md               # Known missing documentation
-└── ...                    # Category-specific subdirs
-```
+## Design Decisions
 
-## Iteration Cadence
+- **Feature-driven, not pattern-driven**: The discovery prompt explicitly rejects abstract exploration targets (e.g., "error-handling-patterns") in favor of concrete features traced end-to-end. This avoids speculative documentation.
+- **One outcome per cycle**: Each invocation completes exactly one discovery cycle, keeping output focused and reviewable.
+- **State in filesystem**: All discovery state lives in `_state/` JSON files rather than in-memory, enabling restart and resume across sessions.
 
-1. **Per-session**: Pick one module or concept area
-2. **Explore**: Investigate the codebase starting from entry points
-3. **Document**: Capture findings immediately
-4. **Track**: Update frontier.json and gaps
-5. **Commit**: Save state for next iteration
+## Related Docs
+- [State Directory](state-directory.md)
+- [Ralph Loop Overview](ralph-loop.md)
+
+## Known Gaps
+- Documentation output structure varies by project — no enforced directory template exists yet.
