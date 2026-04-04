@@ -96,20 +96,21 @@ After completing all files, re-scan for newly created docs by the discovery loop
 
 **DO NOT** declare the task complete. This is a recurring loop.
 
-## Current Status (cycle 24, 2026-04-04)
+## Current Status (cycle 26, 2026-04-04)
 
 **Doc scanning complete**: All 66 `docs/concepts/` files processed. Zero `:::warning` blocks remain.
 
-**Resolved in cycles 1-23**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles.
+**Resolved in cycles 1-25**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password).
 
-**Remaining actionable items** (priority order):
-1. `addCustomer()` dialog — `my-customers.component.ts:186` (needs v1 customer lead form reference)
-2. `openCustomerFormNew()` dialog — `all-customers.component.ts:117` (needs v1 customer form modal)
-3. `previewLead()` dialog — `leads.component.ts:166` (needs dialog integration)
-4. ~~Phase 2 auth forms~~ — Resolved (cycle #25). Register form + reset/recover password page fully implemented.
-5. Support table Material upgrade — sort, filter, pagination, expandable rows
+**Remaining actionable items** (priority order — updated after cycle 26 RESEARCH):
+1. `openCustomerFormNew()` dialog — `all-customers.component.ts:117` — **EASIEST**: v2 `CustomerFormComponent` already exists at `shared/components/customer-form/`. Just wrap in `MatDialog.open()` passing `customer` and `mode:'new'` as data.
+2. `previewLead()` dialog — `leads.component.ts:165` — **MEDIUM**: Create read-only lead preview component (customer details, shop details, shipping/payment method, order cart table with totals). Uses `CartService.getLead(email, id)` which already exists.
+3. `addCustomer()` dialog — `my-customers.component.ts:186` — **LARGEST**: Create new `CustomerLeadFormComponent` with 3 sections (basic: 16 fields, commercial: 7 select dropdowns + shipping addresses, internal: 7 fields). All 5 API methods exist in v2 AccountService (`sendCustomerLead`, `getCustomerLeads`, `getCustomerLead`, `deleteCustomerLead`, `getCustomerLeadLabels`). V1 loads label options (activity_type, payment_type, bank_type, shipping_type, transportation_type, closure_type, ass_fcs_type, giro_type) on init and pre-selects first option.
+4. Support table Material upgrade — sort, filter, pagination, expandable rows
 
 **Architectural items** (tracked in pending-work.md, lower priority):
 - Typed interfaces for Customer, Destination, User
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
+
+<!-- Last updated: cycle 26, 2026-04-04 -->
