@@ -86,21 +86,44 @@ Work through `../docs/**/*.md` alphabetically. Look for gaps and incomplete feat
 
 **DO NOT** declare the task complete. This is a recurring loop.
 
-## Current Status (cycle 28, 2026-04-04)
+## Current Status (cycle 29, 2026-04-04)
 
 **Doc scanning complete**: All 66 `docs/concepts/` files processed. Zero `:::warning` blocks remain.
 
-**Resolved in cycles 1-27**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog).
+**Resolved in cycles 1-28**: 6 orphaned components wired, all `alert()` calls replaced, CSV export added to reports, commissions/orders-status/reports APIs wired, balance/bill-detail features completed, SEO metadata added, promo dismissal persistence, note form toggles, Phase 2 auth forms (register + reset password), customer form dialog (new/update/notify via MatDialog), lead preview dialog.
 
 **Remaining actionable items** (priority order):
 1. ~~`openCustomerFormNew()` dialog~~ — **Resolved** (cycle #27).
-2. ~~`previewLead()` dialog~~ — **Resolved** (cycle #28). LeadPreviewComponent opened via MatDialog with customer details, shop details, shipping/payment, and order cart table.
-3. `addCustomer()` dialog — `my-customers.component.ts:186` — **LARGEST**: Create new `CustomerLeadFormComponent` with 3 sections (basic: 16 fields, commercial: 7 select dropdowns + shipping addresses, internal: 7 fields). All 5 API methods exist in v2 AccountService.
+2. ~~`previewLead()` dialog~~ — **Resolved** (cycle #28).
+3. `addCustomer()` dialog — `my-customers.component.ts:186` — **RESEARCHED** (cycle #29). Ready for implementation next cycle.
 4. Support table Material upgrade — sort, filter, pagination, expandable rows
+
+### addCustomer() Implementation Plan (from cycle 29 research)
+
+**New file**: `src/app/features/account/my-customers/customer-lead-form.component.ts`
+**Opens via**: `MatDialog` from `my-customers.component.ts:addCustomer()`
+
+**Data structure** (3 sections, matches v1 API shape):
+- `basic`: name, address, birth, zip, city, province, fiscal_id, vat, rea, phone, mobile, sdi, zone (select if multi-zone), agent (auto-filled), email, web, password (16 fields)
+- `business`: activity_type, payment, bank, bank_city, iban, shipping, transportation, closure (7 selects from `getCustomerLeadLabels()` + 2 text fields), shipping_address[] (name, address, city, zip, province)
+- `internal`: ass_fcs (select), giro (select), v, f, r, date, note (7 fields — 2 selects, 5 text)
+
+**Label API** (`getCustomerLeadLabels()`): Returns 8 arrays — `activity_type`, `payment_type`, `bank_type`, `shipping_type`, `transportation_type`, `closure_type`, `ass_fcs_type`, `giro_type`. Each item has `{id, name}`. V1 pre-selects `[0].id` from each on load.
+
+**API methods** (all exist in v2 AccountService):
+- `sendCustomerLead(lead)` — create/update
+- `getCustomerLeads()` — list existing leads
+- `getCustomerLead(id)` — load for edit
+- `deleteCustomerLead(id)` — delete with confirm
+- `getCustomerLeadLabels()` — dropdown options
+
+**V2 patterns**: standalone, ReactiveFormsModule, signals, inject(), OnPush, MatDialog, `@if`/`@for`.
+
+**Existing leads list**: V1 shows previously submitted leads at top with edit/delete buttons. Include in dialog.
 
 **Architectural items** (tracked in pending-work.md, lower priority):
 - Typed interfaces for Customer, Destination, User
 - `signal<any>` cleanup in CartService/AccountService
 - Dark mode, theming, config validation
 
-<!-- Last updated: cycle 28, 2026-04-04 -->
+<!-- Last updated: cycle 29, 2026-04-04 -->

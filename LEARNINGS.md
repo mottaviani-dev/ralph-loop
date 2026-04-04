@@ -21,11 +21,6 @@ Content is managed by the agent during work cycles. Manual edits are preserved.
 - Parse with: `str.replace(/\./g, '').replace(',', '.')` then `parseFloat()`.
 - CSV export uses semicolon separator and BOM prefix (`\uFEFF`) for European Excel compatibility.
 
-## Doc Gap Resolution
-- All 66 `docs/concepts/` files scanned; zero `:::warning` blocks remain as of cycle 23.
-- Remaining gaps are architectural (typed interfaces, Material table upgrades, dark mode) — tracked in `pending-work.md`.
-- Three TODO stubs remain: `addCustomer()`, `openCustomerFormNew()`, `previewLead()` — all need dialog components that don't exist yet.
-
 ## Build Verification
 - `yarn ng build` is the single source of truth. CommonJS warnings are normal and expected.
 - Build takes ~6s. Always run after changes.
