@@ -11,7 +11,7 @@
 
 # ── Expected (current) schema versions ──
 # Increment the relevant constant when you change a file's schema.
-EXPECTED_WORK_STATE_VERSION=1
+EXPECTED_WORK_STATE_VERSION=2
 EXPECTED_TASKS_VERSION=1
 EXPECTED_FRONTIER_VERSION=1
 EXPECTED_CYCLE_LOG_VERSION=1
@@ -67,6 +67,24 @@ _migrate_work_state_step() {
               "evaluate_cycles": 0,
               "meta_improve_cycles": 0
             })
+          }
+        ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+    fi
+    if [ "$from_version" -eq 1 ]; then
+        # v1→v2: add phase pipeline fields
+        jq '
+          . + {
+            "schema_version": 2,
+            "current_phase": (.current_phase // ""),
+            "judge_mode": (.judge_mode // "pre"),
+            "pipeline_mode": (.pipeline_mode // "full"),
+            "phase_task_id": (.phase_task_id // ""),
+            "phase_task_title": (.phase_task_title // ""),
+            "pre_reject_count": (.pre_reject_count // 0),
+            "post_reject_count": (.post_reject_count // 0),
+            "last_reject_phase": (.last_reject_phase // ""),
+            "last_reject_reason": (.last_reject_reason // ""),
+            "last_implementation_commit": (.last_implementation_commit // "")
           }
         ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
     fi

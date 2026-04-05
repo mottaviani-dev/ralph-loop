@@ -60,7 +60,7 @@ echo "--- Test 2: work-state.json v0→v1 ---"
     migrate_work_state "$WORK_STATE_FILE"
 
     version=$(jq '.schema_version' "$WORK_STATE_FILE")
-    assert_equals "schema_version is 1 after migration" "$version" "1"
+    assert_equals "schema_version is 2 after migration" "$version" "2"
 
     has_stats=$(jq 'has("stats")' "$WORK_STATE_FILE")
     assert_equals "stats field added" "$has_stats" "true"
@@ -71,6 +71,40 @@ echo "--- Test 2: work-state.json v0→v1 ---"
     # Existing fields preserved
     cycles=$(jq '.total_cycles' "$WORK_STATE_FILE")
     assert_equals "existing total_cycles preserved" "$cycles" "3"
+)
+
+# ── Test 13: work-state.json v1→v2 migration ──────────────────
+echo "--- Test 13: work-state.json v1→v2 ---"
+(
+    sd=$(make_state_dir)
+    STATE_DIR="$sd"
+    WORK_STATE_FILE="$sd/work-state.json"
+    # Create a v1 file (has schema_version:1, no phase fields)
+    echo '{"schema_version":1,"current_task":null,"total_cycles":5,"all_tasks_complete":false,"action_history":[],"stats":{"research_cycles":0,"implement_cycles":0,"fix_cycles":0,"evaluate_cycles":0,"meta_improve_cycles":0}}' > "$WORK_STATE_FILE"
+
+    migrate_work_state "$WORK_STATE_FILE"
+
+    version=$(jq '.schema_version' "$WORK_STATE_FILE")
+    [ "$version" -eq 2 ] && pass "schema_version is 2" || fail "schema_version is $version, expected 2"
+
+    current_phase=$(jq -r '.current_phase' "$WORK_STATE_FILE")
+    [ "$current_phase" = "" ] && pass "current_phase defaults to empty string" || fail "current_phase is '$current_phase'"
+
+    judge_mode=$(jq -r '.judge_mode' "$WORK_STATE_FILE")
+    [ "$judge_mode" = "pre" ] && pass "judge_mode defaults to pre" || fail "judge_mode is '$judge_mode', expected pre"
+
+    pre_reject=$(jq '.pre_reject_count' "$WORK_STATE_FILE")
+    [ "$pre_reject" -eq 0 ] && pass "pre_reject_count defaults to 0" || fail "pre_reject_count is $pre_reject"
+
+    post_reject=$(jq '.post_reject_count' "$WORK_STATE_FILE")
+    [ "$post_reject" -eq 0 ] && pass "post_reject_count defaults to 0" || fail "post_reject_count is $post_reject"
+
+    last_commit=$(jq -r '.last_implementation_commit' "$WORK_STATE_FILE")
+    [ "$last_commit" = "" ] && pass "last_implementation_commit defaults to empty string" || fail "last_implementation_commit is '$last_commit'"
+
+    # Verify existing fields are preserved
+    cycles=$(jq '.total_cycles' "$WORK_STATE_FILE")
+    [ "$cycles" -eq 5 ] && pass "existing total_cycles preserved" || fail "total_cycles is $cycles, expected 5"
 )
 
 # ── Test 3: Backup created on migration ──────────────────────
@@ -115,8 +149,8 @@ echo "--- Test 5: Already-current file skipped ---"
     sd=$(make_state_dir)
     STATE_DIR="$sd"
     WORK_STATE_FILE="$sd/work-state.json"
-    # Write a fully current v1 file
-    echo '{"schema_version":1,"current_task":null,"total_cycles":0,"all_tasks_complete":false,"action_history":[],"stats":{"research_cycles":0,"implement_cycles":0,"fix_cycles":0,"evaluate_cycles":0,"meta_improve_cycles":0}}' > "$WORK_STATE_FILE"
+    # Write a fully current v2 file
+    echo '{"schema_version":2,"current_task":null,"total_cycles":0,"all_tasks_complete":false,"action_history":[],"stats":{"research_cycles":0,"implement_cycles":0,"fix_cycles":0,"evaluate_cycles":0,"meta_improve_cycles":0},"current_phase":"","judge_mode":"pre","pipeline_mode":"full","phase_task_id":"","phase_task_title":"","pre_reject_count":0,"post_reject_count":0,"last_reject_phase":"","last_reject_reason":"","last_implementation_commit":""}' > "$WORK_STATE_FILE"
 
     migrate_work_state "$WORK_STATE_FILE"
 
@@ -215,11 +249,13 @@ echo "--- Test 10: migrate_all processes all five files ---"
 
     migrate_all
 
-    for f in work-state tasks frontier cycle-log maintenance-state; do
+    for f in tasks frontier cycle-log maintenance-state; do
         fname="$sd/${f}.json"
         v=$(jq '.schema_version' "$fname")
         assert_equals "$f schema_version=1" "$v" "1"
     done
+    v=$(jq '.schema_version' "$sd/work-state.json")
+    assert_equals "work-state schema_version=2" "$v" "2"
 )
 
 # ── Test 11: migrate_all no-op when STATE_DIR missing ─────────
